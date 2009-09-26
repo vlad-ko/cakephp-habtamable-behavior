@@ -24,7 +24,7 @@ public $hasAndBelongsToMany = array('Address');
 The rest is taken care of for you.
 
 Suggestions, improvments, etc. are needed.
-[Contact here:](http://wp.me/peDIi-cZ)
+[Contact here](http://wp.me/peDIi-cZ)
 
 
 **Major to-do: Validate both models at once**
