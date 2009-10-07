@@ -3,8 +3,11 @@
  * Save any two HABTM related models at the same time... with existing record check
  * i.e. Loaction HABTM Address, will save both at once. (if a given address does not exist 
  * in the addresses table, it will save address and relation, otherwise we'll get existing Address.id and save relation)
+ * 
+ * Search accross HABTM Models, without modifying your find:
+ * $this->Location->find('all', array('conditions' => array('Address.city' => 'Miami')));
  */
-  class HabtambleBehavior extends ModelBehavior {
+  class HabtamableBehavior extends ModelBehavior {
    
  /**
  * No need to check these fields, as they are pretty much always unique
@@ -17,6 +20,11 @@
    private $habtmModel;
 
  /**
+ * Hold conditions being passed to the find()
+ */  
+  private $conditions;
+  
+ /**
  * Figure out what models we are working with.
  * ... and set relevant class properties.
  */    
@@ -27,7 +35,39 @@
     
     $this->habtmModel = $this->settings[$Model->alias]['habtmModel'];   
   }
+  
+/**
+ * Ability to "search" accross HABTM models *  
+ */
+  public function beforeFind(&$Model) {
+    $this->rewriteFind($Model);    
+    return TRUE;  
+  }
  
+/**  
+ * Fake model bindings and construct a join
+ */
+ 
+  private function rewriteFind(&$Model) {
+        
+    $Model->bindModel(array('hasOne' => array($Model->hasAndBelongsToMany[$this->habtmModel]['with'] => array(
+                                                'foreignKey' => FALSE,
+                                                'type' => 'INNER',
+                                                'conditions' => array($Model->hasAndBelongsToMany[$this->habtmModel]['with'] . '.' .
+                                                                      $Model->hasAndBelongsToMany[$this->habtmModel]['associationForeignKey'] . ' = ' . 
+                                                                      $Model->alias . '.' .$Model->primaryKey)),
+                                              $this->habtmModel => array(
+                                                'foreignKey' => FALSE,
+                                                'type' => 'INNER',
+                                                'conditions' => array(
+                                                  $this->habtmModel . '.' . $Model->{$this->habtmModel}->primaryKey . ' = ' . $Model->hasAndBelongsToMany[$this->habtmModel]['with'] . '.' .
+                                                  $Model->hasAndBelongsToMany[$this->habtmModel]['foreignKey']                                                  
+                                                )))));  
+  }
+  
+  private function extractConditions() {
+    
+  }
   /**
  * If we have an existing record matching our input data, then all we need is the record ID.
  */    
@@ -73,6 +113,8 @@
       if(!in_array($field, $this->fieldsToSkip)) {
         if(isset($Model->data[$this->habtmModel][$field])) {          
           $conditions[] = array($Model->{$this->habtmModel}->name . '.' . $field => $Model->data[$this->habtmModel][$field]);  
+        } else {
+          return FALSE;
         }
       }  
     }      
