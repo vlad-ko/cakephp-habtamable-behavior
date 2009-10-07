@@ -40,7 +40,8 @@
  * Ability to "search" accross HABTM models *  
  */
   public function beforeFind(&$Model) {
-    $this->rewriteFind($Model);    
+    $this->changeBind($Model);    
+    
     return TRUE;  
   }
  
@@ -48,7 +49,7 @@
  * Fake model bindings and construct a join
  */
  
-  private function rewriteFind(&$Model) {
+  private function changeBind(&$Model) {
         
     $Model->bindModel(array('hasOne' => array($Model->hasAndBelongsToMany[$this->habtmModel]['with'] => array(
                                                 'foreignKey' => FALSE,
@@ -63,11 +64,7 @@
                                                   $this->habtmModel . '.' . $Model->{$this->habtmModel}->primaryKey . ' = ' . $Model->hasAndBelongsToMany[$this->habtmModel]['with'] . '.' .
                                                   $Model->hasAndBelongsToMany[$this->habtmModel]['foreignKey']                                                  
                                                 )))));  
-  }
-  
-  private function extractConditions() {
-    
-  }
+  }  
   /**
  * If we have an existing record matching our input data, then all we need is the record ID.
  */    
@@ -91,7 +88,7 @@
    
    $existingRecord = $Model->{$this->habtmModel}->find('first', array('conditions' => $conditions,
                                                                       'recursive' => -1));  
-    
+   
    if(!$existingRecord) {
      $Model->{$this->habtmModel}->create();
      $Model->{$this->habtmModel}->save($Model->data[$this->habtmModel]);
@@ -104,20 +101,18 @@
    return $existingId;
   }
  
-  /**
+ /**
  * Building proper conditions to search our HABTM model for an existing record
  */  
   private function buildCondition(&$Model) {    
-   
     foreach($Model->{$this->habtmModel}->schema() as $field => $type) {      
       if(!in_array($field, $this->fieldsToSkip)) {
-        if(isset($Model->data[$this->habtmModel][$field])) {          
-          $conditions[] = array($Model->{$this->habtmModel}->name . '.' . $field => $Model->data[$this->habtmModel][$field]);  
-        } else {
-          return FALSE;
+        if(isset($Model->data[$this->habtmModel][$field]) && !empty($Model->data[$this->habtmModel][$field])) {                   
+          $conditions[] = array($Model->{$this->habtmModel}->alias . '.' . $field => $Model->data[$this->habtmModel][$field]);  
         }
       }  
-    }      
+    } 
+       
     return $conditions;
   } 
       
