@@ -2,7 +2,7 @@
 >
 > *Basic goals:*
 > 
-> 1. Save two HABTM models at once.
+> _Save two HABTM models at once_
 > For example you are saving a Location (my sweet penthouse) with all the relevant info
 > and the Address (the actual address of the penthouse).
 >
@@ -10,7 +10,7 @@
 > In the above example Location and Address will be saved with transactional support
 > save() works just as well.
 >
-> 2. Search accross HABTM models
+> _Search accross HABTM models_
 > For example, you can do something like:
 > $this->Location->find('all', array('conditions' => array('Location.is_active' => 1, 'Address.city' => 'Miami')));
 > 
