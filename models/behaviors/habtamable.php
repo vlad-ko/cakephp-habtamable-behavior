@@ -36,12 +36,26 @@
 /**
  * Ability to "search" accross HABTM models *  
  */
-  public function beforeFind(&$Model) {
-    $this->changeBind($Model);    
+  public function beforeFind(&$Model, $query) {
+    if($this->checkHabtmConditions($query)) {
+      $this->changeBind($Model);    
+    }
     
     return TRUE;  
   }
 
+/**
+ * We only need to change the bind if the HABTM model is present
+ * somewhere in the conditions.
+ * To make array keys easier to search for a match, we flatten
+ * and implode the keys it into a string.
+ */
+ private function checkHabtmConditions($query) {
+  $searchableConditions = implode('.', Set::flatten(array_keys($query['conditions'])));
+  
+  return strpos($searchableConditions, $this->habtmModel); 
+ }
+ 
 /**  
  * Fake model bindings and construct a JOIN
  */ 
