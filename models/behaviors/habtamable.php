@@ -16,28 +16,29 @@
  * These will really depend on your app, I've included some common ones for mine
  */
    private $fieldsToSkip = array('id', 'created', 'modified', 'updated', 'lat', 'lng', 'is_active', 'pid');
-   
- /**
- * Related model. Using example above, it would be Address
- */   
-   private $habtmModel;  
+ 
  /**
  * Figure out what models we are working with.
  * ... and set relevant properties.
  */    
-   public function setup(&$Model, $settings = array()) { 
-    if(empty($settings)) {    
-      $this->settings[$Model->alias]['habtmModel'] = key($Model->hasAndBelongsToMany);
+   public function setup(&$Model, $settings = array()) {       
+    if (!isset($this->settings[$Model->alias])) {
+      $this->settings[$Model->alias] = array('joinType' => 'INNER', 'fieldsToSkip' => $this->fieldsToSkip);      
     }
+   
+    if(!isset($this->settings[$Model->alias]['habtmModel'])) {      
+      $this->settings[$Model->alias]['habtmModel'] = key($Model->hasAndBelongsToMany);  
+    }
+      
+    $this->settings[$Model->alias] = Set::merge($this->settings[$Model->alias], $settings);   
     
-    $this->habtmModel = $this->settings[$Model->alias]['habtmModel'];  
   }
   
 /**
  * Ability to "search" accross HABTM models *  
  */
   public function beforeFind(&$Model, $query) {
-    if($this->checkHabtmConditions($query)) {
+    if($this->checkHabtmConditions($Model, $query)) {
       $this->changeBind($Model);    
     }
     
@@ -50,29 +51,29 @@
  * To make array keys easier to search for a match, we flatten
  * and implode the keys it into a string.
  */
- private function checkHabtmConditions($query) {
+ private function checkHabtmConditions($Model, $query) {
   $searchableConditions = implode('.', Set::flatten(array_keys($query['conditions'])));
   
-  return strpos($searchableConditions, $this->habtmModel); 
+  return (bool) strpos($searchableConditions, $this->settings[$Model->alias]['habtmModel']); 
  }
  
 /**  
  * Fake model bindings and construct a JOIN
  */ 
   private function changeBind(&$Model) {
-        
-    $Model->bindModel(array('hasOne' => array($Model->hasAndBelongsToMany[$this->habtmModel]['with'] => array(
+       
+    $Model->bindModel(array('hasOne' => array($Model->hasAndBelongsToMany[$this->settings[$Model->alias]['habtmModel']]['with'] => array(
                                                 'foreignKey' => FALSE,
-                                                'type' => 'INNER',
-                                                'conditions' => array($Model->hasAndBelongsToMany[$this->habtmModel]['with'] . '.' .
-                                                                      $Model->hasAndBelongsToMany[$this->habtmModel]['associationForeignKey'] . ' = ' . 
-                                                                      $Model->alias . '.' .$Model->primaryKey)),
-                                              $this->habtmModel => array(
+                                                'type' => $this->settings[$Model->alias]['joinType'],
+                                                'conditions' => array($Model->hasAndBelongsToMany[$this->settings[$Model->alias]['habtmModel']]['with'] . '.' .
+                                                                      $Model->hasAndBelongsToMany[$this->settings[$Model->alias]['habtmModel']]['associationForeignKey'] . ' = ' . 
+                                                                      $Model->alias . '.' . $Model->primaryKey)),
+                                              $this->settings[$Model->alias]['habtmModel'] => array(
                                                 'foreignKey' => FALSE,
-                                                'type' => 'INNER',
+                                                'type' => $this->settings[$Model->alias]['joinType'],
                                                 'conditions' => array(
-                                                  $this->habtmModel . '.' . $Model->{$this->habtmModel}->primaryKey . ' = ' . $Model->hasAndBelongsToMany[$this->habtmModel]['with'] . '.' .
-                                                  $Model->hasAndBelongsToMany[$this->habtmModel]['foreignKey']                                                  
+                                                  $this->settings[$Model->alias]['habtmModel'] . '.' . $Model->{$this->settings[$Model->alias]['habtmModel']}->primaryKey . ' = ' . $Model->hasAndBelongsToMany[$this->settings[$Model->alias]['habtmModel']]['with'] . '.' .
+                                                  $Model->hasAndBelongsToMany[$this->settings[$Model->alias]['habtmModel']]['foreignKey']                                                  
                                                 )))));  
   }
   
@@ -91,15 +92,14 @@
   * our other
   */ 
   private function doValidation(&$Model) {
-    $Model->{$this->habtmModel}->set($Model->data[$this->habtmModel]);
+    $Model->{$this->settings[$Model->alias]['habtmModel']}->set($Model->data[$this->settings[$Model->alias]['habtmModel']]);
     
-    if($Model->{$this->habtmModel}->validates()) {
+    if($Model->{$this->settings[$Model->alias]['habtmModel']}->validates()) {
       return TRUE;
     }
     
     return FALSE;
-  }
-  
+  }  
  /**
  * If we have an existing record matching our input data, then all we need is the record ID.
  */    
@@ -107,14 +107,11 @@
     $existingId = $this->getExistingId($Model);
         
     if(!empty($existingId)) {
-      $Model->data[$this->habtmModel][$this->habtmModel] = $existingId;
+      $Model->data[$this->settings[$Model->alias]['habtmModel']][$this->settings[$Model->alias]['habtmModel']] = $existingId;
     }
             
     return TRUE;
-  }
-  
-  
-  
+  }  
  /**
  * Either save record and get new ID.
  * ... or grab existing ID.
@@ -122,16 +119,16 @@
   private function getExistingId(&$Model) {
    $conditions = $this->buildCondition($Model);
    
-   $existingRecord = $Model->{$this->habtmModel}->find('first', array('conditions' => $conditions,
+   $existingRecord = $Model->{$this->settings[$Model->alias]['habtmModel']}->find('first', array('conditions' => $conditions,
                                                                       'recursive' => -1));  
    
    if(!$existingRecord) {
-     $Model->{$this->habtmModel}->create();
-     $Model->{$this->habtmModel}->save($Model->data[$this->habtmModel]);
+     $Model->{$this->settings[$Model->alias]['habtmModel']}->create();
+     $Model->{$this->settings[$Model->alias]['habtmModel']}->save($Model->data[$this->settings[$Model->alias]['habtmModel']]);
      
-     $existingId = $Model->{$this->habtmModel}->id;
+     $existingId = $Model->{$this->settings[$Model->alias]['habtmModel']}->id;
    } else {     
-     $existingId = $existingRecord[$this->habtmModel][ClassRegistry::init($this->habtmModel)->primaryKey];
+     $existingId = $existingRecord[$this->settings[$Model->alias]['habtmModel']][ClassRegistry::init($this->settings[$Model->alias]['habtmModel'])->primaryKey];
    }
    
    return $existingId;
@@ -142,10 +139,10 @@
  */  
   private function buildCondition(&$Model) { 
      
-    foreach($Model->{$this->habtmModel}->schema() as $field => $meta) {
-      if(!in_array($field, $this->fieldsToSkip)) {
-        if(isset($Model->data[$this->habtmModel][$field]) && !empty($Model->data[$this->habtmModel][$field])) {                   
-          $conditions[] = array($Model->{$this->habtmModel}->alias . '.' . $field => $Model->data[$this->habtmModel][$field]);  
+    foreach($Model->{$this->settings[$Model->alias]['habtmModel']}->schema() as $field => $meta) {
+      if(!in_array($field, $this->settings[$Model->alias]['fieldsToSkip'])) {
+        if(isset($Model->data[$this->settings[$Model->alias]['habtmModel']][$field]) && !empty($Model->data[$this->settings[$Model->alias]['habtmModel']][$field])) {                   
+          $conditions[] = array($Model->{$this->settings[$Model->alias]['habtmModel']}->alias . '.' . $field => $Model->data[$this->settings[$Model->alias]['habtmModel']][$field]);  
         }
       }  
     } 
