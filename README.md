@@ -1,8 +1,7 @@
 > ### Habtamable behavior (!!! Still alpha, quite a few to-do's !!!)
 >
-> *Basic goals:*
-> 
-> _Save two HABTM models at once_
+> **Save two HABTM models at once**
+>
 > For example you are saving a Location (my sweet penthouse) with all the relevant info
 > and the Address (the actual address of the penthouse).
 >
@@ -10,7 +9,8 @@
 > In the above example Location and Address will be saved with transactional support
 > save() works just as well.
 >
-> _Search accross HABTM models_
+> **Search accross HABTM models**
+>
 > For example, you can do something like:
 > $this->Location->find('all', array('conditions' => array('Location.is_active' => 1, 'Address.city' => 'Miami')));
 > 
