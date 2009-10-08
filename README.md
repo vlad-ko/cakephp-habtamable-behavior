@@ -6,16 +6,16 @@
 > and the Address (the actual address of the penthouse).
 >
 > Example: $this->Location->saveAll($this->data);
-> In the above example Location and Address will be saved with transactional support
-> save() works just as well.
+> In the above example Location and Address will be saved with transactional support.
+> (FYI save() works just as well.)
 >
 > **Search accross HABTM models**
 >
 > For example, you can do something like:
 > $this->Location->find('all', array('conditions' => array('Location.is_active' => 1, 'Address.city' => 'Miami')));
 > 
-> (The searching works by "faking" a hasOne bind, and therefore building a join to specify conditions
-> for the time being only INNER join is supported and the bind is not permament)
+> (The searching works by "faking" a hasOne bind, and therefore building a join to specify conditions.
+> For the time being only INNER join is supported and the bind is not permament.)
 > 
 > Of couse, Location HABTM Address
 > 
@@ -28,10 +28,10 @@
 > 
 > Very simple to use:
 > 
-> Using our example above, in the Location model, all you need to do is to add 
+> Using our example above, in the Location model, all you need to do is to add:   
 > *public $actsAs = array('Habtamable');*
 > 
-> The above presumes that in the Location model definition you have:
+> The above presumes that in the Location model definition you have:  
 > *public $hasAndBelongsToMany = array('Address');*
 > 
 > The rest is taken care of for you.
