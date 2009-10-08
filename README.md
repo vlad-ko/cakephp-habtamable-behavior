@@ -31,8 +31,8 @@
 > Using our example above, in the Location model, all you need to do is to add:   
 > *public $actsAs = array('Habtamable');*
 > 
-> You can also pass some settings like so:
-> *public $actsAs = array('Habtamable' => array('joinType' => 'LEFT', 'fieldsToSkip' => array('this', 'that'), 'habtmModel' => 'SomeModel'));
+> You can also pass some settings like so:  
+> *public $actsAs = array('Habtamable' => array('joinType' => 'LEFT', 'fieldsToSkip' => array('this', 'that'), 'habtmModel' => 'SomeModel'));*
 > 
 > 'joinType' -> default is "INNER", any valid SQL JOIN type should be supplied. This is used when doing cross-model queries.    
 > 'fieldsToSkip' -> do not include these fields, when checking for an exising record. The setting will be merged with defaults set in the behavior.    
