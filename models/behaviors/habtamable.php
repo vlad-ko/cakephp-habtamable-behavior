@@ -52,6 +52,9 @@
  * and implode the keys it into a string.
  */
  private function checkHabtmConditions($Model, $query) {
+  if (empty($query['conditions'])) {
+    $query['conditions'] = array();
+  }
   $searchableConditions = implode('.', Set::flatten(array_keys($query['conditions'])));
   
   return (bool) strpos($searchableConditions, $this->settings[$Model->alias]['habtmModel']); 
